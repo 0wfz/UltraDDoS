@@ -6,11 +6,11 @@ from scapy.all import IP, TCP, send
 from scapy.config import conf
 from cryptography.utils import CryptographyDeprecationWarning
 
-# Suprimir aviso de depreciação do TripleDES
+# Suprimir aviso do algoritmo TripleDES obsoleto
 warnings.filterwarnings("ignore", category=CryptographyDeprecationWarning)
 
-# Caminho para o arquivo manuf (se tiver baixado manualmente)
-conf.manufdb = "C:/Users/Angelo/scapy-manuf/manuf"  # Altere esse caminho se necessário
+# Caminho para o arquivo manuf baixado ou criado manualmente
+conf.manufdb = "C:/Users/Angelo/scapy-manuf/manuf"  # <- Verifique se o caminho existe!
 
 # Logo
 logo = """
